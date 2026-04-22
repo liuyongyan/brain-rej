@@ -12,6 +12,22 @@ python -m pipeline.inspect 1            # detail of iteration 1
 python -m pipeline.inspect diff 0 1     # what changed in the plan between iter 0 and 1
 ```
 
+## The two critique layers
+
+Each iteration runs two critique layers in sequence:
+
+1. **Hardcoded checks** (`pipeline/checks.py`) — fast, deterministic, free. Each check is a Python function that detects a specific known failure mode (ECM-ligand inflation, missing permutation null, etc.). Auto-fixable; cheap to extend.
+2. **LLM-as-biomedical-expert** (`pipeline/llm_critic.py`) — slower (~30–60s/iter), uses Claude Opus 4.7 with adaptive thinking. Reads `PLAN.md` + `RESULTS.md` + the latest result data and produces 2–5 expert critique items the hardcoded checks would miss. Requires `ANTHROPIC_API_KEY`. Always escalates to human (does not auto-fix).
+
+| Setting | Default | Override |
+|---|---|---|
+| LLM critic enabled | yes (if API key set) | `--no-llm` flag |
+| Model | `claude-opus-4-7` | `LLM_CRITIC_MODEL=claude-sonnet-4-6` |
+| Effort | `high` | `LLM_CRITIC_EFFORT=xhigh` (recommended for hardest reviews) or `medium` (cheaper) |
+| API key | `ANTHROPIC_API_KEY` env var | (no fallback — without it, LLM critic is skipped with a minor "no_api_key" issue) |
+
+The system prompt is cached server-side via Anthropic prompt caching — first call writes the cache, subsequent calls within 5 minutes get ~10× cost reduction. Cost per iteration after caching: roughly $0.10–$0.30 depending on output length and thinking depth.
+
 ## The lifecycle
 
 ```

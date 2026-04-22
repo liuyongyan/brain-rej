@@ -11,6 +11,7 @@ Usage:
 from __future__ import annotations
 import argparse
 import json
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -77,8 +78,8 @@ def clear_state():
 
 
 def safe_critique(result, plan):
-    """Run all checks, swallowing per-check exceptions so one bad check
-    doesn't kill the loop."""
+    """Run hardcoded checks + LLM critique, swallowing per-check exceptions so
+    one bad check doesn't kill the loop."""
     out = []
     from .checks import CHECKS
     for c in CHECKS:
@@ -91,6 +92,15 @@ def safe_critique(result, plan):
                 check_name=f"{c.__name__}_failed",
                 evidence=f"Check raised exception: {type(e).__name__}: {e}",
             ))
+    # LLM-as-biomedical-expert layer (skipped if PIPELINE_NO_LLM=1 or no API key)
+    try:
+        from .llm_critic import llm_review
+        out.extend(llm_review(result, plan))
+    except Exception as e:
+        out.append(_internal_issue(
+            check_name="llm_critic_failed",
+            evidence=f"LLM critic module raised: {type(e).__name__}: {e}",
+        ))
     return out
 
 
@@ -249,7 +259,13 @@ def main():
                     help="path to a Plan JSON to start from")
     ap.add_argument("--resume", action="store_true",
                     help="continue from the latest iter_NNN/plan.json")
+    ap.add_argument("--no-llm", action="store_true",
+                    help="disable the LLM-as-biomedical-expert critique layer")
     args = ap.parse_args()
+
+    if args.no_llm:
+        os.environ["PIPELINE_NO_LLM"] = "1"
+        print("LLM critic disabled (--no-llm)")
 
     if args.fresh:
         clear_state()

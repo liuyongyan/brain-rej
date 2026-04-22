@@ -21,9 +21,13 @@ Currently it analyzes 4 papers ([listed below](#data-sources)) to rank brain rec
 ```bash
 git clone https://github.com/liuyongyan/brain-rej
 cd brain-rej
+pip install -r requirements.txt
 
 # Recreate raw data (~770MB; mostly Ximerakis Suppl. Tables)
 bash scripts/download_data.sh
+
+# (Optional but recommended) Enable the LLM-as-biomedical-expert critique layer
+export ANTHROPIC_API_KEY=sk-ant-...
 
 # Run the loop
 python -m pipeline.loop --fresh
@@ -33,6 +37,8 @@ python -m pipeline.inspect              # all iterations
 python -m pipeline.inspect 1            # detail of iteration 1
 python -m pipeline.inspect diff 0 1     # what changed between iterations
 ```
+
+The pipeline runs without `ANTHROPIC_API_KEY` (the LLM critic gracefully degrades to a single "no_api_key" minor issue), but the expert review is the most valuable part of each iteration — set the key if you can, or use `--no-llm` to suppress the prompt entirely.
 
 After the loop finishes, read **`RESULTS.md`** for findings and **`PLAN.md`** for the methodology.
 
@@ -50,7 +56,8 @@ brain-rej/
 │   ├── inspect.py                   # CLI for browsing state
 │   ├── core.py                      # Plan / Result / Issue dataclasses
 │   ├── analyze.py                   # parameterized analysis engine
-│   ├── checks.py                    # critique checks (the IP)
+│   ├── checks.py                    # hardcoded critique checks
+│   ├── llm_critic.py                # LLM-as-biomedical-expert critique layer (Claude Opus 4.7)
 │   ├── revise.py                    # applies fix recipes
 │   ├── report.py                    # auto-generates PLAN.md + RESULTS.md
 │   └── knowledge/*.tsv              # editable curated gene lists

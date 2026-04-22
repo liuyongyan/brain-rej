@@ -1,0 +1,5 @@
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+openpyxl>=3.1          # for reading .xlsx supplementary tables
+anthropic>=0.96        # for the LLM-as-biomedical-expert critique layer (optional — pipeline runs without it)
