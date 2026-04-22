@@ -1,0 +1,16 @@
+[
+  {
+    "check_name": "top_hit_score_gap_too_small",
+    "severity": "major",
+    "evidence": "Gap between top-1 (BMPR1A) and top-2 (LRP6) is only 0.42; top-1 empirical p = 0.112. The 'single best receptor' claim is not robust.",
+    "fix_recipe": null,
+    "escalation_question": "Should the answer be reported as a tier (top-N) rather than a single receptor? Top candidates with similar scores: ['BMPR1A', 'LRP6', 'NPR1', 'NRP2', 'FZD2']"
+  },
+  {
+    "check_name": "no_independent_replication",
+    "severity": "major",
+    "evidence": "Top 5 hits (['BMPR1A', 'LRP6', 'NPR1', 'NRP2', 'FZD2']) are based on a single mouse parabiosis cohort (Ximerakis). No independent replication.",
+    "fix_recipe": null,
+    "escalation_question": "P\u00e1lovics 2022 brain subset (Figshare project 119145) is the natural replication cohort but requires ~hundreds MB download. Authorize download for replication of top 5?"
+  }
+]

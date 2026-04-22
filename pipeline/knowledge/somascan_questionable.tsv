@@ -1,0 +1,5 @@
+gene	reason	reference
+GDF11	Aptamer crossreacts with MSTN	Egerman 2015 Cell Metab; Schafer 2016 Aging Cell
+GDF8	MSTN; aptamer crossreacts with GDF11	Egerman 2015 Cell Metab
+MSTN	Same aptamer issue	Egerman 2015 Cell Metab
+IL1B	Documented decoy/complex issues across SOMA panels	multiple

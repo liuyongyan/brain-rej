@@ -1,0 +1,96 @@
+[
+  {
+    "check_name": "ecm_ligand_inflation",
+    "severity": "major",
+    "evidence": "5 of top 20 hits driven by ECM ligands (['LAMA1']); these are not blood-borne signaling factors.",
+    "fix_recipe": {
+      "action": "exclude_ligands",
+      "args": {
+        "ligands": [
+          "AGRN",
+          "BGN",
+          "CHAD",
+          "COL18A1",
+          "COL1A1",
+          "COL1A2",
+          "COL2A1",
+          "COL3A1",
+          "COL4A1",
+          "COL4A2",
+          "COL5A1",
+          "COL6A1",
+          "COL6A2",
+          "COL6A3",
+          "COL8A1",
+          "DCN",
+          "FBN1",
+          "FBN2",
+          "FN1",
+          "HSPG2",
+          "ICAM4",
+          "JAM3",
+          "LAMA1",
+          "LAMA2",
+          "LAMA3",
+          "LAMA4",
+          "LAMA5",
+          "LAMB1",
+          "LAMB2",
+          "LAMB3",
+          "LAMC1",
+          "LAMC2",
+          "LAMC3",
+          "LUM",
+          "MADCAM1",
+          "NID1",
+          "NID2",
+          "PERLECAN",
+          "POSTN",
+          "SPARC",
+          "THBS1",
+          "THBS2",
+          "TNC",
+          "TNXB",
+          "VTN"
+        ]
+      }
+    },
+    "escalation_question": null
+  },
+  {
+    "check_name": "somascan_crossreactive_top_ligand",
+    "severity": "major",
+    "evidence": "Top hit (BMPR1A) is driven by ligand GDF11, which has documented SomaScan reagent crossreactivity (Egerman 2015, Schafer 2016). The plasma age effect for this ligand is unreliable.",
+    "fix_recipe": {
+      "action": "exclude_ligands",
+      "args": {
+        "ligands": [
+          "GDF11",
+          "GDF8",
+          "IL1B",
+          "MSTN"
+        ]
+      }
+    },
+    "escalation_question": null
+  },
+  {
+    "check_name": "no_permutation_null",
+    "severity": "major",
+    "evidence": "Combined Z scores reported without a permutation null. Cannot assert significance of top-1 hit relative to chance.",
+    "fix_recipe": {
+      "action": "add_permutation_null",
+      "args": {
+        "n_perm": 1000
+      }
+    },
+    "escalation_question": null
+  },
+  {
+    "check_name": "no_independent_replication",
+    "severity": "major",
+    "evidence": "Top 5 hits (['BMPR1A', 'LRP6', 'NRP2', 'CD44', 'FZD2']) are based on a single mouse parabiosis cohort (Ximerakis). No independent replication.",
+    "fix_recipe": null,
+    "escalation_question": "P\u00e1lovics 2022 brain subset (Figshare project 119145) is the natural replication cohort but requires ~hundreds MB download. Authorize download for replication of top 5?"
+  }
+]

@@ -1,0 +1,6 @@
+gene	reason
+CCR3	Low-copy GPCR; under-detected by scRNA-seq
+GHR	Low-copy; absence from CellChat universe expected
+IGF1R	Low-copy in scRNA-seq despite high biological importance
+CCR5	Low-copy GPCR
+CXCR1	Low-copy GPCR

@@ -1,0 +1,73 @@
+{
+  "combination": {
+    "method": "stoufferZ",
+    "params": {}
+  },
+  "data_sources": {
+    "jeffries_s7": {
+      "path": "jeffries_2025/2023-09-17055D-s3/S7_Linear_Model.xlsx"
+    },
+    "lehallier_st1": {
+      "path": "lehallier_2019/suppl_tables.xlsx"
+    },
+    "lehallier_st14": {
+      "path": "lehallier_2019/suppl_tables.xlsx"
+    },
+    "lehallier_st4": {
+      "path": "lehallier_2019/suppl_tables.xlsx"
+    },
+    "omnipath": {
+      "path": "resources/omnipath_ligrec.tsv"
+    },
+    "ximerakis_cellchat": {
+      "path": "ximerakis_2023/S20.xlsx"
+    },
+    "ximerakis_tpms": {
+      "path": "ximerakis_2023/S6.xlsx"
+    }
+  },
+  "evidence_streams": [
+    {
+      "method": "spearman_blood_age",
+      "name": "brain_doseresp",
+      "params": {
+        "min_max_tpm": 1.0,
+        "min_rho": 0.7
+      }
+    },
+    {
+      "method": "max_neglogq_with_wave7",
+      "name": "plasma",
+      "params": {
+        "exclude_ligands": [],
+        "q_threshold": 0.05,
+        "wave7_weight": 1.5
+      }
+    },
+    {
+      "method": "consensus_stim_inh",
+      "name": "directional",
+      "params": {}
+    },
+    {
+      "method": "jeffries_celltype_match",
+      "name": "cross_species",
+      "params": {}
+    }
+  ],
+  "filters_post": [],
+  "tried_fixes": [],
+  "universe": {
+    "method": "cellchat_condition_dependent",
+    "params": {
+      "groups": [
+        "RJV-restored",
+        "aging-gained",
+        "aging-lost",
+        "AGA-induced"
+      ],
+      "path": "ximerakis_2023/S20.xlsx"
+    }
+  },
+  "version": 1
+}

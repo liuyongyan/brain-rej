@@ -1,0 +1,129 @@
+{
+  "combination": {
+    "method": "stoufferZ_with_permutation_null",
+    "params": {
+      "n_perm": 1000
+    }
+  },
+  "data_sources": {
+    "jeffries_s7": {
+      "path": "jeffries_2025/2023-09-17055D-s3/S7_Linear_Model.xlsx"
+    },
+    "lehallier_st1": {
+      "path": "lehallier_2019/suppl_tables.xlsx"
+    },
+    "lehallier_st14": {
+      "path": "lehallier_2019/suppl_tables.xlsx"
+    },
+    "lehallier_st4": {
+      "path": "lehallier_2019/suppl_tables.xlsx"
+    },
+    "omnipath": {
+      "path": "resources/omnipath_ligrec.tsv"
+    },
+    "ximerakis_cellchat": {
+      "path": "ximerakis_2023/S20.xlsx"
+    },
+    "ximerakis_tpms": {
+      "path": "ximerakis_2023/S6.xlsx"
+    }
+  },
+  "evidence_streams": [
+    {
+      "method": "spearman_blood_age",
+      "name": "brain_doseresp",
+      "params": {
+        "min_max_tpm": 1.0,
+        "min_rho": 0.7
+      }
+    },
+    {
+      "method": "max_neglogq_with_wave7",
+      "name": "plasma",
+      "params": {
+        "exclude_ligands": [
+          "AGRN",
+          "BGN",
+          "CHAD",
+          "COL18A1",
+          "COL1A1",
+          "COL1A2",
+          "COL2A1",
+          "COL3A1",
+          "COL4A1",
+          "COL4A2",
+          "COL5A1",
+          "COL6A1",
+          "COL6A2",
+          "COL6A3",
+          "COL8A1",
+          "DCN",
+          "FBN1",
+          "FBN2",
+          "FN1",
+          "GDF11",
+          "GDF8",
+          "HSPG2",
+          "ICAM4",
+          "IL1B",
+          "JAM3",
+          "LAMA1",
+          "LAMA2",
+          "LAMA3",
+          "LAMA4",
+          "LAMA5",
+          "LAMB1",
+          "LAMB2",
+          "LAMB3",
+          "LAMC1",
+          "LAMC2",
+          "LAMC3",
+          "LUM",
+          "MADCAM1",
+          "MSTN",
+          "NID1",
+          "NID2",
+          "PERLECAN",
+          "POSTN",
+          "SPARC",
+          "THBS1",
+          "THBS2",
+          "TNC",
+          "TNXB",
+          "VTN"
+        ],
+        "q_threshold": 0.05,
+        "wave7_weight": 1.5
+      }
+    },
+    {
+      "method": "consensus_stim_inh",
+      "name": "directional",
+      "params": {}
+    },
+    {
+      "method": "jeffries_celltype_match",
+      "name": "cross_species",
+      "params": {}
+    }
+  ],
+  "filters_post": [],
+  "tried_fixes": [
+    "f900bdf3bb",
+    "fc3ab855ec",
+    "cd611146f2"
+  ],
+  "universe": {
+    "method": "cellchat_condition_dependent",
+    "params": {
+      "groups": [
+        "RJV-restored",
+        "aging-gained",
+        "aging-lost",
+        "AGA-induced"
+      ],
+      "path": "ximerakis_2023/S20.xlsx"
+    }
+  },
+  "version": 2
+}
