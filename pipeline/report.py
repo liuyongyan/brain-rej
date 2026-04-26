@@ -202,82 +202,61 @@ def _render_plan_md(plan: dict, result: dict) -> str:
     brain_p = _stream_params(plan, "brain_doseresp")
     min_rho = brain_p.get("min_rho", 0.7)
     comb = plan["combination"]["method"]
+    top1 = result["top_n"][0] if result.get("top_n") else None
 
     lines = [AUTO_HEADER]
-    lines.append("# Plan: Discovering the Most Critical Receptor for Brain Rejuvenation\n")
+    lines.append("# Plan\n")
 
-    lines.append("\n## The question\n\n")
+    # ---- TOP: question + current answer ----
+    lines.append("\n**Goal** — identify the receptor most likely to mediate brain rejuvenation "
+                 "through blood-borne factors.\n")
+    if top1:
+        ep = top1.get("empirical_p")
+        ep_str = f", empirical p = {ep:.3f}" if ep is not None else ""
+        lines.append(f"\n**Current best answer** — **{top1['receptor']}** "
+                     f"(rank 1, score {top1.get('final_score', 0):.2f}{ep_str}). "
+                     f"See `RESULTS.md` for the full evidence card.\n")
+
+    # ---- Approach (compact) ----
+    lines.append("\n## Approach\n\n")
+    lines.append("Receptor-down, not ligand-up: filter to brain-expressed parabiosis-responsive "
+                 "receptors first, then layer plasma ligand evidence. Five evidence gates:\n\n")
     lines.append(
-        "We want to identify the receptor (or receptor system) most likely to causally mediate "
-        "the effect of blood-borne factors on brain aging. The biological logic: as people age, "
-        "plasma composition changes; for these blood signals to affect brain function, they must "
-        "act through a receptor on a brain cell. Identifying that receptor pinpoints the most "
-        "actionable intervention target — including for therapeutic repurposing.\n"
+        "1. **Brain expression** — must be in Ximerakis CellChat condition-dependent set\n"
+        f"2. **Dose-response** — Spearman ρ vs. blood-age axis (YY→OO); |ρ| > {min_rho}\n"
+        f"3. **Plasma ligand** — ≥ 1 OmniPath ligand at q.Age < {q_thr}; wave-7 weighted {w7_w}×\n"
+        "4. **Directional consistency** — agonist/antagonist sign coherence\n"
+        "5. **Cross-species** — sign-concordant in matched human PFC cell type (Jeffries)\n"
+        f"\nCombined via **{comb}**.\n"
+    )
+    if n_excl > 0:
+        lines.append(f"\n**Filters applied**: {n_excl} ligands excluded as ECM or SomaScan-questionable "
+                     f"(see `pipeline/knowledge/`).\n")
+
+    # ---- DIVIDER ----
+    lines.append("\n---\n")
+    lines.append("\n*Detail below — read above for the answer.*\n")
+
+    # ---- Detail: hypothesis ----
+    lines.append("\n## Hypothesis (full)\n\n")
+    lines.append(
+        "A receptor is *critical for brain aging* iff all five hold:\n\n"
+        "- **(A) Brain expression** on a blood-contacting cell type (endothelium, pericyte, "
+        "microglia, astrocyte endfoot, choroid plexus) — hard prerequisite\n"
+        "- **(B) Brain signaling responds to blood age** under heterochronic parabiosis\n"
+        "- **(C) Cognate plasma ligand changes with age**, large enough to plausibly drive (B)\n"
+        "- **(D) Directional consistency** — ligand and receptor changes combine coherently "
+        "(agonist↑ + receptor↑/compensatory↓; antagonist↑ + downstream signaling↓)\n"
+        "- **(E) Cross-species replication** — same direction in human PFC matched cell type\n"
     )
 
-    lines.append("\n## Data resources\n\n")
+    # ---- Detail: data sources ----
+    lines.append("\n## Data sources\n\n")
     lines.append("| Source | Role |\n|---|---|\n")
     for key in src_used:
         if key in SOURCE_DESCRIPTIONS:
             name, why = SOURCE_DESCRIPTIONS[key]
             lines.append(f"| {name} | {why} |\n")
-
-    lines.append("\n## Core hypothesis\n\n")
-    lines.append(
-        "A receptor is *critical for brain aging* if and only if all five conditions hold:\n\n"
-        "- **(A) Brain expression** — expressed on a brain cell type that contacts blood "
-        "(endothelium, pericyte, microglia, astrocyte endfoot, choroid plexus). "
-        "**Hard prerequisite, not a score.**\n"
-        "- **(B) Brain signaling responds to blood age** — receptor expression and/or its "
-        "inferred ligand–receptor activity shifts under heterochronic parabiosis (old getting "
-        "young blood, young getting old blood).\n"
-        "- **(C) Cognate ligand changes in plasma with age** — the ligand side of the receptor's "
-        "signaling axis changes in human plasma with age, large enough to plausibly drive (B).\n"
-        "- **(D) Directional consistency** — ligand and receptor changes combine coherently "
-        "(an agonist that rises in plasma should pair with receptor up- or compensatory "
-        "down-regulation; an antagonist that rises should pair with reduced downstream signaling).\n"
-        "- **(E) Cross-species replication** — the human PFC shows the same age-direction in "
-        "the matched cell type as the mouse brain.\n"
-    )
-
-    lines.append("\n## Method — receptor-down, not ligand-up\n\n")
-    lines.append(
-        "The pipeline starts from the **brain-side** filter (receptors that CellChat already "
-        "validated as brain-expressed and parabiosis-responsive) and only then asks whether "
-        "plasma ligand evidence fits. This reverses the naive ligand-up approach, which would "
-        "pull in many receptors with no real brain expression.\n\n"
-        "Each candidate receptor must pass five gates:\n\n"
-    )
-    lines.append("| Gate | Criterion | Implementation |\n|---|---|---|\n")
-    lines.append("| A | Brain expression + parabiosis-responsive | "
-                 "In Ximerakis CellChat S20 condition-dependent set (RJV-restored ∪ aging-gained "
-                 "∪ aging-lost ∪ AGA-induced) |\n")
-    lines.append(f"| B | Blood-age dose-response in brain | "
-                 f"Spearman ρ between receptor TPM and the blood-age ordinal axis "
-                 f"(YY=0, YX=1, OY=2, YO=3, OX=4, OO=5) per cell type; |ρ| > {min_rho} required |\n")
-    lines.append(f"| C | Plasma ligand changes with age | "
-                 f"At least one OmniPath ligand with q.Age < {q_thr} in Lehallier ST4. "
-                 f"7th-decade-wave ligands (cognitive-decline window) get {w7_w}× weight |\n")
-    lines.append("| D | Directional consistency | OmniPath agonist/antagonist annotations check "
-                 "whether ligand-side and receptor-side changes are sign-coherent |\n")
-    lines.append("| E | Cross-species replication | Sign-concordant change in matched human PFC "
-                 "cell type (Jeffries S7), with mouse↔human cell type mapping |\n")
-
-    lines.append(f"\nThe four evidence dimensions (B–E) are converted to z-scores by ranking and "
-                 f"combined via **{comb}**.\n")
-
-    if n_excl > 0:
-        lines.append(f"\n**Currently excluded from the plasma ligand pool**: {n_excl} ligands "
-                     f"are filtered out as either ECM proteins (not credibly blood-borne) or "
-                     f"SomaScan reagents with documented crossreactivity issues. The exclusion "
-                     f"list is in `pipeline/knowledge/`.\n")
-
-    lines.append("\n## Outputs\n\n")
-    lines.append("- **`RESULTS.md`** — narrative findings (also auto-generated)\n")
-    lines.append("- **`state/iter_NNN/master.tsv`** — full ranked candidates with all evidence columns\n")
-    lines.append("- **`state/iter_log.jsonl`** — pipeline run history (one JSON line per iteration)\n")
-    lines.append("- **`state/escalations.md`** — open questions for human review\n")
-    lines.append("- **`pipeline/USAGE.md`** — how to run, inspect, and extend the pipeline\n")
 
     return "".join(lines)
 
@@ -291,149 +270,139 @@ def _render_results_md(plan: dict, result: dict, issues: list) -> str:
     n_excl = len(plasma_p.get("exclude_ligands", []))
 
     lines = [AUTO_HEADER]
-    lines.append("# Results: Most Critical Receptor for Brain Rejuvenation\n")
+    lines.append("# Results\n")
 
-    # ---- I. The question ----
-    lines.append("\n## I. The biological question\n\n")
-    lines.append(
-        "Which receptor (or receptor system) most likely mediates the effect of blood-borne "
-        "factors on brain aging? Heterochronic parabiosis (Wyss-Coray and others) shows that "
-        "young blood rejuvenates aged brain and old blood prematurely ages young brain — "
-        "establishing that **plasma carries causally relevant signals**. What remains unknown "
-        "is which receptors on which brain cells transduce those signals.\n"
-    )
-
-    # ---- II. Why these papers ----
-    lines.append("\n## II. The causal chain we trace\n\n")
-    lines.append("```\nplasma ligand ──(Lehallier 2019)──> crosses BBB ──> brain receptor "
-                 "──(Ximerakis 2023)──> downstream effects\n"
-                 "                                                  │\n"
-                 "                                       (Jeffries 2025: human-brain validation)\n"
-                 "                                                  │\n"
-                 "                                       (Pálovics 2022: mouse replication)\n```\n")
-    lines.append("Each paper covers one segment; none alone is sufficient.\n")
-
-    # ---- III. Method (brief) ----
-    lines.append("\n## III. Method (summary)\n\n")
-    lines.append(
-        f"The receptor universe is the {n_total} brain-expressed, parabiosis-responsive "
-        f"receptors from Ximerakis CellChat. Each receptor accumulates evidence on four "
-        f"dimensions (brain dose-response, plasma ligand strength, directional consistency, "
-        f"cross-species replication) which are combined via Stouffer's Z. "
-        f"{n_excl} ligands are filtered as ECM or methodologically unreliable (SomaScan "
-        f"crossreactive). Detail in `PLAN.md`.\n"
-    )
-
-    # ---- IV. Findings ----
-    lines.append("\n## IV. Findings\n")
     if not top_n:
-        lines.append("\n*No candidates produced — pipeline not yet run.*\n")
-    else:
-        top1 = top_n[0]
-        lines.append(f"\n### Top single receptor: **{top1['receptor']}**\n\n")
-        score = top1.get("final_score", 0)
-        ep = top1.get("empirical_p")
-        lines.append(f"Final score **{score:.2f}**" +
-                     (f" (empirical p = {ep:.3f} vs. 1,000-permutation null)" if ep is not None else "") +
-                     ".\n\n")
-        lines.append("| Criterion | Evidence |\n|---|---|\n")
-        if top1.get("origin"):
-            lines.append(f"| CellChat origin | `{top1['origin']}` |\n")
-        bbb_ct = top1.get("bbb_top_celltype")
-        bbb_rho = top1.get("bbb_top_rho", 0)
-        if bbb_ct:
-            lines.append(f"| Brain dose-response | {bbb_ct} (BBB-facing): ρ = {bbb_rho:+.2f} vs blood-age axis |\n")
-        if top1.get("best_ligand"):
-            wave = " (7th-decade wave)" if top1.get("best_wave7") else ""
-            lines.append(f"| Top plasma ligand | **{top1['best_ligand']}**{wave}, q = {top1.get('best_q', 0):.1e} |\n")
-        if top1.get("n_sig"):
-            lines.append(f"| Plasma support | {top1['n_sig']} ligands at q < 0.05 "
-                         f"({top1.get('all_sig_ligands', '')[:80]}{'…' if len(top1.get('all_sig_ligands','')) > 80 else ''}) |\n")
-        if top1.get("dir_total"):
-            lines.append(f"| Directional consistency | {top1.get('dir_consistency', 0)}/{top1['dir_total']} "
-                         f"agonist/antagonist ligands sign-coherent |\n")
-        if top1.get("hs_top_celltype"):
-            lines.append(f"| Cross-species (human PFC) | {top1['hs_top_celltype']}: "
-                         f"log2(elderly/adult) = {top1.get('hs_top_log2FC', 0):+.2f} |\n")
+        lines.append("\n*Pipeline has not produced any candidates yet.*\n")
+        return "".join(lines)
 
-        # ---- Runner-ups ----
-        if len(top_n) > 1:
-            lines.append("\n### Runner-up tier (rank 2–5)\n\n")
-            lines.append("| Rank | Receptor | Score | Best ligand | BBB cell type | Origin |\n")
-            lines.append("|---|---|---|---|---|---|\n")
-            for r in top_n[1:5]:
-                ep_s = f" (p={r.get('empirical_p'):.2f})" if r.get("empirical_p") is not None else ""
-                lines.append(f"| {r.get('rank','?')} | **{r['receptor']}** | "
-                             f"{r.get('final_score',0):.2f}{ep_s} | "
-                             f"{r.get('best_ligand') or '—'} | "
-                             f"{r.get('bbb_top_celltype') or '—'} | "
-                             f"{r.get('origin','')} |\n")
+    top1 = top_n[0]
 
-        # ---- System-level patterns ----
-        patterns = _detect_system_patterns(top_n)
-        if patterns:
-            lines.append("\n### System-level patterns\n\n")
-            for p in patterns:
-                lines.append(f"- {p}\n")
+    # ============================================================
+    # ABOVE THE FOLD — the answer
+    # ============================================================
 
-    # ---- V. Sanity checks ----
-    if top_n:
-        lines.append("\n## V. Sanity checks\n\n")
-        in_top, in_universe = _detect_positive_controls(top_n, n_total)
-        if in_top:
-            lines.append(f"**Positive controls found in top quartile** (expected if scoring is biologically sensible):\n\n")
-            for r, rank, note in sorted(in_top, key=lambda x: x[1]):
-                lines.append(f"- **{r}** (rank {rank}) — {note}\n")
-        if in_universe:
-            lines.append(f"\n**Other positive controls in the eligible set** (lower-ranked, "
-                         f"expected if their evidence is genuinely weaker):\n\n")
-            for r, rank, note in sorted(in_universe, key=lambda x: x[1])[:5]:
-                lines.append(f"- {r} (rank {rank}) — {note}\n")
+    # ---- TL;DR (one-liner) ----
+    score = top1.get("final_score", 0)
+    ep = top1.get("empirical_p")
+    ep_str = f", empirical p = {ep:.3f}" if ep is not None else ""
+    bbb_ct = top1.get("bbb_top_celltype")
+    bbb_rho = top1.get("bbb_top_rho", 0)
+    best_lig = top1.get("best_ligand", "—")
+    best_q = top1.get("best_q", 0)
+    hs_ct = top1.get("hs_top_celltype")
+    hs_lfc = top1.get("hs_top_log2FC", 0)
 
-    # ---- VI. Open questions / limitations ----
+    tldr_bits = [f"**{top1['receptor']}** (score {score:.2f}{ep_str})"]
+    if best_lig and best_lig != "—":
+        tldr_bits.append(f"driven by plasma **{best_lig}** (q = {best_q:.1e})")
+    if bbb_ct and bbb_rho:
+        tldr_bits.append(f"strongest brain dose-response in **{bbb_ct}** (ρ = {bbb_rho:+.2f})")
+    if hs_ct and hs_lfc:
+        tldr_bits.append(f"concordant in human PFC **{hs_ct}** (log2FC = {hs_lfc:+.2f})")
+
+    lines.append(f"\n## Top hit\n\n{'; '.join(tldr_bits)}.\n")
+
+    # ---- Top 5 table ----
+    lines.append("\n## Top 5 candidates\n\n")
+    lines.append("| rank | receptor | score | best ligand | best q | BBB cell |\n")
+    lines.append("|---|---|---|---|---|---|\n")
+    for r in top_n[:5]:
+        bq = r.get("best_q", 0)
+        bq_s = f"{bq:.1e}" if bq else "—"
+        ep_v = r.get("empirical_p")
+        score_s = f"{r.get('final_score',0):.2f}" + (f" *(p={ep_v:.2f})*" if ep_v is not None else "")
+        lines.append(f"| {r.get('rank','?')} | **{r['receptor']}** | {score_s} | "
+                     f"{r.get('best_ligand') or '—'} | {bq_s} | "
+                     f"{r.get('bbb_top_celltype') or '—'} |\n")
+
+    # ---- System-level patterns (compact, one bullet each) ----
+    patterns = _detect_system_patterns(top_n)
+    if patterns:
+        lines.append("\n## Bigger picture\n\n")
+        for p in patterns:
+            lines.append(f"- {p}\n")
+
+    # ---- Open questions (only if any) ----
     human_iss = [i for i in issues if not i.get("fix_recipe")]
     if human_iss:
-        lines.append(f"\n## VI. Open questions for human review\n\n")
-        for i, iss in enumerate(human_iss, 1):
-            lines.append(f"**{i}. {iss['check_name']}** — {iss['evidence']}\n")
-            if iss.get("escalation_question"):
-                lines.append(f"\n   → *{iss['escalation_question']}*\n\n")
+        lines.append(f"\n## What needs human input ({len(human_iss)})\n\n")
+        for iss in human_iss:
+            q = iss.get("escalation_question") or iss.get("evidence", "")
+            lines.append(f"- **{iss['check_name']}** — {q}\n")
 
-    # ---- VII. Standing limitations ----
-    lines.append("\n## VII. Standing limitations\n\n")
-    lines.append("1. **scRNA-seq under-detects low-abundance receptors** (especially GPCRs). "
-                 "CCR3, GHR, IGF1R and other known aging-relevant low-copy receptors are "
-                 "absent from the CellChat universe and therefore from this analysis.\n")
-    lines.append("2. **OmniPath directional annotations are missing for many ligands** — "
-                 "directional consistency is computed only over the annotated subset.\n")
-    lines.append("3. **Mouse↔human cell-type mapping is approximate** — mouse EC ≈ human "
-                 "endo, mouse MG ≈ human micro, etc., but cells are not strictly equivalent.\n")
-    lines.append("4. **Plasma proteomic data is SomaScan-based** — affinity-reagent specificity "
-                 "caveats apply; the most documented offenders are filtered out via "
-                 "`pipeline/knowledge/somascan_questionable.tsv`.\n")
+    # ---- Recommended next step (compact) ----
+    lines.append("\n## Recommended next step\n\n")
     if "palovics" not in plan["data_sources"]:
-        lines.append("5. **No independent mouse parabiosis replication yet** (Pálovics 2022 brain "
-                     "subset not loaded). Top hits depend on a single mouse cohort (Ximerakis).\n")
+        lines.append(f"Replicate {top1['receptor']} in Pálovics 2022 brain (Figshare 119145). "
+                     f"If direction holds, query GTEx/AMP-AD DLPFC bulk for human replication, "
+                     f"then Open Targets for variant-to-brain-age evidence.\n")
+    else:
+        lines.append(f"Query GTEx/AMP-AD DLPFC bulk RNA-seq for {top1['receptor']} vs. age "
+                     f"(bypasses scRNA dropout). Then Open Targets for variant-to-brain-age evidence.\n")
 
-    # ---- VIII. Next steps ----
-    lines.append("\n## VIII. Suggested next steps\n\n")
-    lines.append("1. **Independent mouse replication**: load Pálovics 2022 brain subset and "
-                 "verify the top 5 dose-response.\n")
-    lines.append("2. **Human bulk replication**: query GTEx and AMP-AD (ROSMAP) for the top "
-                 "candidates' expression vs. chronological age in DLPFC — bypasses scRNA-seq's "
-                 "detection floor for low-copy receptors.\n")
-    lines.append("3. **Human genetics**: query Open Targets / GWAS Catalog for variants in the "
-                 "top candidates associated with brain-aging traits (UK Biobank brain age, "
-                 "Alzheimer's, cognitive trajectories).\n")
-    if top_n:
-        top1_rec = top_n[0]["receptor"]
-        lines.append(f"4. **If {top1_rec} replicates**: propose a heterochronic parabiosis × "
-                     f"brain-endothelium-specific {top1_rec} conditional knockout to test whether "
-                     f"removing it from the BBB abolishes the rejuvenation effect of young blood.\n")
+    # ============================================================
+    # BELOW THE FOLD — supporting detail
+    # ============================================================
+
+    lines.append("\n---\n")
+    lines.append("\n*Supporting detail below — read above for the answer.*\n")
+
+    # ---- Top hit evidence card ----
+    lines.append(f"\n## Top hit evidence: {top1['receptor']}\n\n")
+    lines.append("| Criterion | Evidence |\n|---|---|\n")
+    if top1.get("origin"):
+        lines.append(f"| CellChat origin | `{top1['origin']}` |\n")
+    if bbb_ct:
+        lines.append(f"| Brain dose-response | {bbb_ct}: ρ = {bbb_rho:+.2f} vs blood-age axis |\n")
+    if best_lig:
+        wave = " (7th-decade wave)" if top1.get("best_wave7") else ""
+        lines.append(f"| Top plasma ligand | **{best_lig}**{wave}, q = {best_q:.1e} |\n")
+    if top1.get("n_sig"):
+        all_lig = top1.get('all_sig_ligands', '')
+        all_lig_s = all_lig[:80] + ('…' if len(all_lig) > 80 else '')
+        lines.append(f"| Plasma support | {top1['n_sig']} sig ligands ({all_lig_s}) |\n")
+    if top1.get("dir_total"):
+        lines.append(f"| Directional consistency | {top1.get('dir_consistency', 0)}/{top1['dir_total']} "
+                     f"agonist/antagonist signs coherent |\n")
+    if hs_ct:
+        lines.append(f"| Cross-species (human PFC) | {hs_ct}: log2(elderly/adult) = {hs_lfc:+.2f} |\n")
+
+    # ---- Sanity checks (compact) ----
+    in_top, in_universe = _detect_positive_controls(top_n, n_total)
+    if in_top or in_universe:
+        lines.append("\n## Sanity checks\n\n")
+        if in_top:
+            in_top_str = ", ".join(f"{r} (rank {rank})" for r, rank, _ in sorted(in_top, key=lambda x: x[1]))
+            lines.append(f"Positive controls in top quartile: **{in_top_str}**.\n")
+        if in_universe:
+            other_str = ", ".join(f"{r} (rank {rank})"
+                                  for r, rank, _ in sorted(in_universe, key=lambda x: x[1])[:5])
+            lines.append(f"Other positive controls present at lower ranks: {other_str}.\n")
+
+    # ---- Method summary (one paragraph) ----
+    lines.append("\n## Method (one paragraph)\n\n")
+    lines.append(
+        f"Receptor universe = {n_total} brain-expressed parabiosis-responsive receptors from "
+        f"Ximerakis CellChat. Each scored on (1) brain dose-response (Spearman ρ vs. blood-age), "
+        f"(2) plasma ligand strength (Lehallier ST4 q.Age, wave-7-weighted), "
+        f"(3) directional consistency (OmniPath agonist/antagonist), "
+        f"(4) cross-species concordance (Jeffries human PFC). Combined via Stouffer's Z. "
+        f"{n_excl} ligands filtered as ECM or SomaScan-questionable. Full method in `PLAN.md`.\n"
+    )
+
+    # ---- Limitations (compact bullets) ----
+    lines.append("\n## Limitations\n\n")
+    lines.append("- scRNA-seq under-detects low-copy GPCRs (CCR3, GHR, IGF1R absent from universe by construction)\n")
+    lines.append("- OmniPath directional annotations missing for many ligands; consistency computed on annotated subset only\n")
+    lines.append("- Mouse↔human cell-type mapping is approximate (mouse EC ≈ human endo, etc.)\n")
+    lines.append("- SomaScan affinity-reagent caveats; most documented offenders filtered out\n")
+    if "palovics" not in plan["data_sources"]:
+        lines.append("- No independent mouse parabiosis replication yet (Pálovics not loaded)\n")
 
     lines.append(f"\n---\n\n")
-    lines.append(f"*Full ranked table at `state/iter_{result['iteration']:03d}/master.tsv` "
-                 f"({n_total} receptors). Pipeline run history: `python -m pipeline.inspect`.*\n")
+    lines.append(f"*Full ranked table: `state/iter_{result['iteration']:03d}/master.tsv` "
+                 f"({n_total} receptors). History: `python -m pipeline.inspect`.*\n")
 
     return "".join(lines)
 
